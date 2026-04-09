@@ -1,0 +1,52 @@
+# pipewatch example configuration
+# Copy to ~/.pipewatch/config.yaml and edit as needed.
+
+# How often (in seconds) to poll pipeline sources for health metrics.
+poll_interval_seconds: 300
+
+# Logging verbosity: DEBUG | INFO | WARNING | ERROR
+log_level: INFO
+
+# Data pipeline sources to monitor.
+sources:
+  - name: prod-postgres
+    type: postgres
+    connection:
+      host: db.example.com
+      port: 5432
+      dbname: analytics
+      user: pipewatch_reader
+      # password should come from env var PIPEWATCH_PG_PASSWORD
+    tags:
+      - production
+      - critical
+
+  - name: staging-mysql
+    type: mysql
+    connection:
+      host: staging-db.internal
+      port: 3306
+      dbname: etl_staging
+      user: monitor
+    tags:
+      - staging
+
+  - name: s3-raw-ingest
+    type: s3
+    connection:
+      bucket: my-company-raw-data
+      prefix: ingest/
+      region: us-east-1
+    tags:
+      - production
+
+# Alert channels and thresholds.
+alerts:
+  - channel: slack
+    # Alert if a pipeline hasn't produced data in this many minutes.
+    threshold_minutes: 30
+    enabled: true
+
+  - channel: email
+    threshold_minutes: 120
+    enabled: false

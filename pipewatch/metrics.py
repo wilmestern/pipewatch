@@ -65,3 +65,15 @@ class MetricsCollector:
     def clear_history(self) -> None:
         """Clear all recorded metrics."""
         self._history.clear()
+
+    def healthy_ratio(self) -> Optional[float]:
+        """Return the fraction of recorded metrics that are within healthy thresholds.
+
+        Returns ``None`` if no metrics have been recorded yet.
+        """
+        if not self._history:
+            return None
+        healthy_count = sum(
+            1 for m in self._history if m.is_healthy(self.source_config)
+        )
+        return healthy_count / len(self._history)

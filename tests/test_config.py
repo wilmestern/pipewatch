@@ -84,3 +84,18 @@ def test_load_config_defaults(tmp_path):
 def test_load_config_missing_file():
     with pytest.raises(FileNotFoundError, match="Config file not found"):
         load_config("/nonexistent/path/config.yaml")
+
+
+def test_load_config_source_missing_tags(tmp_path):
+    """A source without tags defined should default to an empty list."""
+    content = textwrap.dedent("""\
+        sources:
+          - name: no-tags-source
+            type: postgres
+            connection:
+              host: db.example.com
+    """)
+    p = tmp_path / "no_tags.yaml"
+    p.write_text(content)
+    cfg = load_config(str(p))
+    assert cfg.sources[0].tags == []

@@ -1,80 +1,79 @@
-"""Metric history storage and trend analysis for pipewatch."""
-
-from collections import deque
+"""Metric history storage and retrieval for pipeline sources."""
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Deque, Dict, List, Optional
+from typing import Dict, Deque, List, Optional
 
-from pipewatch.metrics import MetricResult
+from pipewatch.metrics import MetricResult, PipelineMetric
 
 
 @dataclass
 class MetricSnapshot:
-    """A point-in-time snapshot of a metric result."""
-    timestamp: datetime
-    result: MetricResult
-
-
-@dataclass
-class SourceHistory:
-    """Maintains a rolling history of metric results for a single source."""
     source_name: str
-    max_entries: int = 100
-    _snapshots: Deque[MetricSnapshot] = field(default_factory=deque, repr=False)
-
-    def record(self, result: MetricResult) -> None:
-        """Add a new metric result to the history."""
-        snapshot = MetricSnapshot(timestamp=datetime.utcnow(), result=result)
-        self._snapshots.append(snapshot)
-        if len(self._snapshots) > self.max_entries:
-            self._snapshots.popleft()
-
-    def latest(self) -> Optional[MetricSnapshot]:
-        """Return the most recent snapshot, or None if empty."""
-        return self._snapshots[-1] if self._snapshots else None
-
-    def all(self) -> List[MetricSnapshot]:
-        """Return all snapshots in chronological order."""
-        return list(self._snapshots)
-
-    def failure_rate(self) -> float:
-        """Return the fraction of unhealthy snapshots (0.0 to 1.0)."""
-        if not self._snapshots:
-            return 0.0
-        failures = sum(1 for s in self._snapshots if not s.result.healthy)
-        return failures / len(self._snapshots)
-
-    def consecutive_failures(self) -> int:
-        """Return the number of consecutive failures from the most recent entry."""
-        count = 0
-        for snapshot in reversed(list(self._snapshots)):
-            if not snapshot.result.healthy:
-                count += 1
-            else:
-                break
-        return count
+    metric: PipelineMetric
+    healthy: bool
+    recorded_at: datetime = field(default_factory=datetime.utcnow)
 
 
-class HistoryStore:
-    """Central store for per-source metric history."""
+class SourceHistory:
+    """In-memory rolling history of metric snapshots per source."""
 
     def __init__(self, max_entries: int = 100) -> None:
-        self.max_entries = max_entries
-        self._histories: Dict[str, SourceHistory] = {}
+        self._max_entries = max_entries
+        self._store: Dict[str, Deque[MetricSnapshot]] = defaultdict(
+            lambda: deque(maxlen=self._max_entries)
+        )
 
-    def record(self, source_name: str, result: MetricResult) -> None:
-        """Record a metric result for the given source."""
-        if source_name not in self._histories:
-            self._histories[source_name] = SourceHistory(
-                source_name=source_name,
-                max_entries=self.max_entries,
-            )
-        self._histories[source_name].record(result)
+    def record(self, result: MetricResult) -> None:
+        snapshot = MetricSnapshot(
+            source_name=result.source_name,
+            metric=result.metric,
+            healthy=result.healthy,
+        )
+        self._store[result.source_name].append(snapshot)
 
-    def get(self, source_name: str) -> Optional[SourceHistory]:
-        """Retrieve history for a source, or None if not yet recorded."""
-        return self._histories.get(source_name)
+    def latest(self, source_name: str) -> Optional[MetricSnapshot]:
+        entries = self._store.get(source_name)
+        if not entries:
+            return None
+        return entries[-1]
+
+    def all(self, source_name: str) -> List[MetricSnapshot]:
+        return list(self._store.get(source_name, []))
+
+    def recent(self, source_name: str, n: int) -> List[MetricSnapshot]:
+        entries = self._store.get(source_name)
+        if not entries:
+            return []
+        return list(entries)[-n:]
 
     def sources(self) -> List[str]:
-        """Return a list of all tracked source names."""
-        return list(self._histories.keys())
+        return list(self._store.keys())
+
+    def clear(self, source_name: str) -> None:
+        if source_name in self._store:
+            self._store[source_name].clear()
+
+    def error_rate(self, source_name: str, window: int = 10) -> float:
+        snapshots = self.recent(source_name, window)
+        if not snapshots:
+            return 0.0
+        return sum(1 for s in snapshots if not s.healthy) / len(snapshots)
+
+    def uptime(self, source_name: str) -> float:
+        all_snapshots = self.all(source_name)
+        if not all_snapshots:
+            return 1.0
+        healthy_count = sum(1 for s in all_snapshots if s.healthy)
+        return healthy_count / len(all_snapshots)
+
+    def average_latency(self, source_name: str, window: int = 10) -> Optional[float]:
+        snapshots = self.recent(source_name, window)
+        latencies = [
+            s.metric.latency_seconds
+            for s in snapshots
+            if s.metric.latency_seconds is not None
+        ]
+        if not latencies:
+            return None
+        return sum(latencies) / len(latencies)

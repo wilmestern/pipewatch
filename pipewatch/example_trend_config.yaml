@@ -1,0 +1,41 @@
+# Example configuration for trend analysis in pipewatch
+# Add this section to your main pipewatch config
+
+trend_analysis:
+  enabled: true
+
+  # Number of recent snapshots to consider per analysis window
+  window: 10
+
+  # Minimum samples required before a trend direction is reported
+  min_samples: 3
+
+  # Maximum snapshots stored in memory per source
+  max_history_entries: 100
+
+  # Thresholds for alerting on trend results
+  thresholds:
+    # Trigger an alert if error_rate exceeds this fraction over the window
+    error_rate_alert: 0.3
+
+    # Trigger an alert if average latency exceeds this value (seconds)
+    latency_alert_seconds: 5.0
+
+  # Sources to include in trend analysis (leave empty to include all)
+  sources:
+    - orders_db
+    - payments_api
+    - inventory_feed
+
+# Example notifier integration for trend alerts
+notifiers:
+  - type: log
+    level: WARNING
+
+  - type: email
+    smtp_host: smtp.example.com
+    smtp_port: 587
+    from_address: pipewatch@example.com
+    to_addresses:
+      - oncall@example.com
+    subject_prefix: "[pipewatch-trend]"

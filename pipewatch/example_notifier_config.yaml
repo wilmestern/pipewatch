@@ -1,0 +1,45 @@
+# pipewatch example notifier configuration
+# Attach one of these blocks under the top-level `notifier:` key in your
+# main pipewatch config.yaml.
+
+# ── Option 1: Log notifier (default, no extra dependencies) ──────────────────
+# Writes alert details to the standard Python logger at the chosen level.
+#
+# notifier:
+#   backend: log
+#   level: WARNING        # DEBUG | INFO | WARNING | ERROR | CRITICAL
+
+# ── Option 2: Email notifier ─────────────────────────────────────────────────
+# Sends a plain-text summary email via SMTP whenever active alerts exist.
+#
+# notifier:
+#   backend: email
+#   smtp_host: smtp.example.com
+#   smtp_port: 587          # default: 25
+#   sender: pipewatch@example.com
+#   recipients:
+#     - ops-team@example.com
+#     - oncall@example.com
+#   subject_prefix: "[pipewatch]"   # optional, default shown
+
+# ── Full example config snippet ───────────────────────────────────────────────
+poll_interval: 60
+log_level: INFO
+
+notifier:
+  backend: email
+  smtp_host: smtp.internal
+  smtp_port: 25
+  sender: pipewatch@internal
+  recipients:
+    - data-eng@internal
+
+sources:
+  - name: orders_db
+    type: sql
+    connection: "postgresql://user:pass@db:5432/orders"
+    query: "SELECT COUNT(*) FROM orders WHERE created_at > NOW() - INTERVAL '5 minutes'"
+    alerts:
+      - metric: row_count
+        min_threshold: 1
+        max_threshold: 10000

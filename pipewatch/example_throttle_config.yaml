@@ -1,0 +1,41 @@
+# Example configuration for alert throttling in pipewatch.
+#
+# Throttling prevents notification floods by suppressing repeated
+# alerts for the same source/alert pair within a configurable window.
+
+poll_interval_seconds: 60
+log_level: INFO
+
+sources:
+  - name: production_db
+    type: sql
+    connection_string: "postgresql://user:pass@localhost/prod"
+    query: "SELECT COUNT(*) FROM orders WHERE created_at > NOW() - INTERVAL '5 minutes'"
+    metric_name: recent_orders
+    expected_min: 1
+    expected_max: 10000
+
+  - name: payment_api
+    type: http
+    url: "https://api.example.com/health"
+    metric_name: api_latency_ms
+    expected_max: 500
+
+alerts:
+  - name: row_count_low
+    source_name: production_db
+    condition: below_min
+  - name: api_slow
+    source_name: payment_api
+    condition: above_max
+
+# Throttle rules: suppress repeated notifications within the window.
+# Without a matching rule, every firing alert triggers a notification.
+throttle_rules:
+  - source_name: production_db
+    alert_name: row_count_low
+    min_interval_seconds: 300   # at most once every 5 minutes
+
+  - source_name: payment_api
+    alert_name: api_slow
+    min_interval_seconds: 120   # at most once every 2 minutes

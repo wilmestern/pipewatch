@@ -77,3 +77,19 @@ class MetricsCollector:
             1 for m in self._history if m.is_healthy(self.source_config)
         )
         return healthy_count / len(self._history)
+
+    def summary(self) -> Optional[dict]:
+        """Return a statistical summary of recorded metric values.
+
+        Returns a dict with ``count``, ``min``, ``max``, and ``mean`` keys,
+        or ``None`` if no metrics have been recorded yet.
+        """
+        if not self._history:
+            return None
+        values = [m.value for m in self._history]
+        return {
+            "count": len(values),
+            "min": min(values),
+            "max": max(values),
+            "mean": sum(values) / len(values),
+        }

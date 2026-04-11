@@ -77,3 +77,20 @@ class SourceHistory:
         if not latencies:
             return None
         return sum(latencies) / len(latencies)
+
+    def consecutive_failures(self, source_name: str) -> int:
+        """Return the number of consecutive unhealthy snapshots at the end of history.
+
+        Useful for alerting logic that should trigger only after a sustained
+        period of failures rather than a single blip.
+        """
+        entries = self._store.get(source_name)
+        if not entries:
+            return 0
+        count = 0
+        for snapshot in reversed(entries):
+            if not snapshot.healthy:
+                count += 1
+            else:
+                break
+        return count

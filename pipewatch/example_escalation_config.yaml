@@ -1,0 +1,39 @@
+# Example escalation policy configuration for pipewatch
+# Include this section in your main pipewatch config.
+
+poll_interval_seconds: 60
+log_level: INFO
+
+sources:
+  - name: warehouse
+    type: postgres
+    connection_string: "postgresql://localhost/dw"
+    poll_interval_seconds: 60
+
+alerts:
+  - name: row_count_alert
+    min_row_count: 500
+    max_freshness_seconds: 300
+    max_error_rate: 0.05
+
+# Escalation rules determine when a *persisting* alert triggers a
+# follow-up notification beyond the initial one.
+#
+# Fields:
+#   source_name       – restrict to a specific source (omit or null = all)
+#   alert_name        – restrict to a specific alert (omit or null = all)
+#   escalate_after_seconds – seconds an alert must stay active before
+#                            the first escalation (and between subsequent ones)
+#   max_escalations   – maximum number of escalation notifications per
+#                        alert occurrence (prevents infinite spam)
+
+escalation_rules:
+  - source_name: null
+    alert_name: null
+    escalate_after_seconds: 300
+    max_escalations: 3
+
+  - source_name: warehouse
+    alert_name: row_count_alert
+    escalate_after_seconds: 120
+    max_escalations: 5

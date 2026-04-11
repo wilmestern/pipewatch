@@ -1,0 +1,38 @@
+# Example configuration for digest reporting in pipewatch
+# The digest feature aggregates pipeline health across all sources
+# into a single periodic summary.
+
+poll_interval: 60
+log_level: INFO
+
+# Digest settings
+digest:
+  # Minimum number of historical samples required before a source
+  # is included in trend analysis within the digest.
+  min_samples: 5
+
+  # How often (in seconds) a full digest report is generated and logged.
+  # Should be a multiple of poll_interval.
+  report_interval: 300
+
+sources:
+  - name: orders-pipeline
+    url: http://orders.internal/health
+    interval: 60
+
+  - name: payments-pipeline
+    url: http://payments.internal/health
+    interval: 60
+
+  - name: inventory-pipeline
+    url: http://inventory.internal/health
+    interval: 60
+
+alerts:
+  - metric: latency_ms
+    threshold: 400.0
+    operator: gt
+
+  - metric: error_count
+    threshold: 10
+    operator: gte

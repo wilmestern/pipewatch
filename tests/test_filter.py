@@ -93,3 +93,11 @@ def test_first_returns_none_when_no_match(mixed_results):
 def test_apply_empty_list():
     f = MetricFilter(FilterCriteria(only_unhealthy=True))
     assert f.apply([]) == []
+
+
+def test_filter_min_and_max_value(mixed_results):
+    """Test that both min_value and max_value can be combined to define a range."""
+    f = MetricFilter(FilterCriteria(min_value=10.0, max_value=85.0))
+    result = f.apply(mixed_results)
+    assert len(result) == 2
+    assert all(10.0 <= r.value <= 85.0 for r in result)

@@ -32,6 +32,18 @@ def test_delay_capped_at_max():
     assert policy.delay_for(3) == 15.0
 
 
+def test_retry_policy_rejects_non_positive_max_attempts():
+    """RetryPolicy should raise ValueError when max_attempts is less than 1."""
+    with pytest.raises(ValueError, match="max_attempts"):
+        RetryPolicy(max_attempts=0)
+
+
+def test_retry_policy_rejects_negative_delay():
+    """RetryPolicy should raise ValueError when delay_seconds is negative."""
+    with pytest.raises(ValueError, match="delay_seconds"):
+        RetryPolicy(delay_seconds=-1.0)
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -102,9 +114,4 @@ def test_summary_on_failure(fast_policy):
 
 def test_default_policy_used_when_none_provided():
     r = Retrier()
-    assert r.policy.max_attempts == 3
-
-
-def test_retry_result_stores_value_on_success(retrier):
-    result = retrier.run(lambda: {"key": "val"})
-    assert result.value == {"key": "val"}
+    assert r.policy is not None

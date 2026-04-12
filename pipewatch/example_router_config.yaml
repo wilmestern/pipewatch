@@ -1,0 +1,47 @@
+# Example router configuration for pipewatch
+# Defines how alerts are directed to specific notification backends.
+
+router:
+  default_backend: log
+
+  backends:
+    log:
+      type: log
+      level: WARNING
+
+    email:
+      type: email
+      smtp_host: smtp.example.com
+      smtp_port: 587
+      sender: pipewatch@example.com
+      recipients:
+        - oncall@example.com
+        - team-alerts@example.com
+
+    pager:
+      type: email
+      smtp_host: smtp.example.com
+      smtp_port: 587
+      sender: pipewatch@example.com
+      recipients:
+        - pager@example.com
+
+  rules:
+    # High-severity database alerts go directly to pager
+    - source_name: database
+      alert_name: row_lag
+      backend_names:
+        - pager
+        - email
+
+    # All other database alerts go to email
+    - source_name: database
+      backend_names:
+        - email
+
+    # API alerts go to log only
+    - source_name: api
+      backend_names:
+        - log
+
+    # Catch-all: use the default_backend defined above

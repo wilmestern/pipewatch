@@ -1,0 +1,35 @@
+# example_labeler_config.yaml
+# Demonstrates how severity labeling rules can be expressed in configuration.
+#
+# The Labeler evaluates rules top-to-bottom; the first matching rule wins.
+# If no rule matches, the default_severity is applied.
+
+labeler:
+  default_severity: medium   # fallback when no rule matches
+
+  rules:
+    # Critical: specific source + specific alert name
+    - severity: critical
+      source_name: payments_db
+      alert_name: row_count_drop
+
+    # Critical: any alert on the orders pipeline
+    - severity: critical
+      source_name: orders_pipeline
+
+    # High: latency alerts across any source
+    - severity: high
+      alert_name: latency_spike
+
+    # High: error-rate alerts across any source
+    - severity: high
+      alert_name: error_rate_exceeded
+
+    # Low: routine heartbeat checks
+    - severity: low
+      alert_name: heartbeat
+
+    # Info: data-freshness advisory on the reporting source
+    - severity: info
+      source_name: reporting
+      alert_name: freshness_advisory

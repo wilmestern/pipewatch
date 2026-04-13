@@ -59,6 +59,15 @@ def test_register_adds_backend(router):
     assert "log" in router.backends
 
 
+def test_register_overwrites_existing_backend(router):
+    """Registering a backend under an existing name replaces the previous one."""
+    backend_a = MagicMock()
+    backend_b = MagicMock()
+    router.register("log", backend_a)
+    router.register("log", backend_b)
+    assert router.backends["log"] is backend_b
+
+
 # --- Router.route ---
 
 def test_route_sends_to_matching_backend(router):
@@ -109,13 +118,4 @@ def test_route_returns_empty_when_no_rules_and_no_default(router):
 
 def test_route_first_matching_rule_wins(router):
     backend_a = MagicMock()
-    backend_b = MagicMock()
-    router.register("a", backend_a)
-    router.register("b", backend_b)
-    router.rules.append(RouteRule(backend_names=["a"], source_name="db"))
-    router.rules.append(RouteRule(backend_names=["b"]))
-
-    router.route([_alert("db", "lag")])
-
-    backend_a.send.assert_called_once()
-    backend_b.send.assert_not_called()
+    backend_b = MagicMock

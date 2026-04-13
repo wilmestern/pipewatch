@@ -39,8 +39,7 @@ class Aggregator:
         self._history = history
 
     def compute(self, source_name: str, last_n: Optional[int] = None) -> AggregateStats:
-        """Return AggregateStats for *source_name* using up to *last_n* snapshots."""
-        snapshots = self._history.all(source_name)
+        """Return AggregateStats for *source_name* using up to *last_n* snapshots."""\n        snapshots = self._history.all(source_name)
         if last_n is not None:
             snapshots = snapshots[-last_n:]
 
@@ -76,3 +75,19 @@ class Aggregator:
             max_row_count=max_row_count,
             avg_latency_ms=avg_latency_ms,
         )
+
+    def compute_all(self, last_n: Optional[int] = None) -> list[AggregateStats]:
+        """Return AggregateStats for every source tracked in the history store.
+
+        Args:
+            last_n: If provided, only the most recent *last_n* snapshots are
+                    considered for each source (passed through to :meth:`compute`).
+
+        Returns:
+            A list of :class:`AggregateStats`, one per known source, ordered
+            alphabetically by source name.
+        """
+        return [
+            self.compute(source_name, last_n=last_n)
+            for source_name in sorted(self._history.sources())
+        ]

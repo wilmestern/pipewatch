@@ -1,0 +1,34 @@
+# Example configuration snippet for the Annotator feature.
+# Annotations are runtime artefacts (not persisted to YAML by default),
+# but this file documents the recommended operator workflow.
+
+# pipewatch main config excerpt
+poll_interval_seconds: 30
+log_level: INFO
+
+sources:
+  - name: payments_db
+    type: postgres
+    connection_string: "postgresql://user:pass@db-host/payments"
+    alert:
+      latency_threshold_seconds: 2.0
+      error_rate_threshold: 0.05
+      min_row_count: 100
+
+  - name: kafka_ingest
+    type: kafka
+    connection_string: "kafka://broker:9092/ingest-topic"
+    alert:
+      latency_threshold_seconds: 1.0
+      error_rate_threshold: 0.01
+      min_row_count: 1000
+
+# Annotation workflow notes:
+#
+# 1. During an incident, operators call annotator.add(source, note, author)
+#    via the CLI or a thin REST endpoint (future work).
+#
+# 2. The dashboard/reporter calls annotator.annotate_result(result) to
+#    surface notes alongside health status.
+#
+# 3. After resolution, call annotator.clear(source) to remove stale notes.

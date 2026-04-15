@@ -26,6 +26,30 @@ def _make_result(src: SourceConfig, acfg: AlertConfig, healthy: bool, latency: f
     )
 
 
+def _build_fake_alerts(
+    report_sources, acfg: AlertConfig
+) -> list[Alert]:
+    """Build Alert objects for each unhealthy source in a digest report.
+
+    Args:
+        report_sources: Iterable of SourceDigest entries from a DigestReport.
+        acfg: The AlertConfig to associate with each generated alert.
+
+    Returns:
+        A list of Alert instances for sources whose stats indicate unhealthy status.
+    """
+    return [
+        Alert(
+            source_name=sd.source_name,
+            alert_config=acfg,
+            triggered_at=datetime.utcnow(),
+            current_value=sd.stats.avg_latency_ms,
+        )
+        for sd in report_sources
+        if not sd.stats.is_healthy
+    ]
+
+
 def run_demo() -> None:
     src = SourceConfig(name="billing-pipeline", url="http://billing.internal/metrics", interval=60)
     acfg = AlertConfig(metric="latency_ms", threshold=300.0, operator="gt")
@@ -43,16 +67,7 @@ def run_demo() -> None:
     # Optionally notify via LogNotifier if any source is unhealthy
     if report.unhealthy_count > 0:
         notifier = LogNotifier()
-        fake_alerts = [
-            Alert(
-                source_name=sd.source_name,
-                alert_config=acfg,
-                triggered_at=datetime.utcnow(),
-                current_value=sd.stats.avg_latency_ms,
-            )
-            for sd in report.sources
-            if not sd.stats.is_healthy
-        ]
+        fake_alerts = _build_fake_alerts(report.sources, acfg)
         notifier.send(fake_alerts)
         print(f"Notified {len(fake_alerts)} unhealthy source(s).")
 

@@ -1,0 +1,17 @@
+# Example quota configuration for pipewatch
+# Defines how many collection runs are permitted per source within a time window.
+
+quota:
+  rules:
+    - source_name: db_pipeline
+      max_runs: 10
+      window_seconds: 60
+
+    - source_name: api_pipeline
+      max_runs: 20
+      window_seconds: 60
+
+    # Wildcard rule — applies to any source not matched above
+    - source_name: null
+      max_runs: 5
+      window_seconds: 60

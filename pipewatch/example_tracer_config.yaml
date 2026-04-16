@@ -1,0 +1,23 @@
+# Example tracer configuration for pipewatch
+# The Tracer records execution spans for each pipeline source,
+# enabling lineage tracking and duration monitoring.
+
+tracer:
+  # Retain up to this many spans per source in memory (future feature)
+  max_spans_per_source: 100
+
+  # Sources to trace (uses source names from main config)
+  sources:
+    - name: db_pipeline
+      enabled: true
+
+    - name: api_pipeline
+      enabled: true
+
+    - name: file_pipeline
+      enabled: true
+
+# Integration note:
+# Pass a shared Tracer instance to your Scheduler or MetricsCollector.
+# Call tracer.start(source_name) before collection and
+# tracer.finish(span, success, error) after to record each run.

@@ -1,0 +1,37 @@
+# Example configuration for the Comparator feature
+# The comparator evaluates the latest metric value against a rolling
+# average of recent historical readings to detect regressions.
+
+comparator:
+  # Number of historical snapshots to include in the baseline average.
+  # The most-recent snapshot is always treated as the "current" value;
+  # the preceding `window_size` snapshots form the baseline.
+  window_size: 10
+
+  # Sources to monitor for regressions (must match names in `sources`).
+  sources:
+    - orders_db
+    - payments_api
+    - inventory_service
+
+sources:
+  - name: orders_db
+    source_type: postgres
+    connection_string: "postgresql://localhost/orders"
+
+  - name: payments_api
+    source_type: http
+    connection_string: "https://payments.internal/health"
+
+  - name: inventory_service
+    source_type: http
+    connection_string: "https://inventory.internal/health"
+
+alerts:
+  - name: latency_regression
+    metric: latency_ms
+    threshold: 300.0
+    operator: gt
+
+poll_interval: 60
+log_level: INFO

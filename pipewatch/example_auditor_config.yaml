@@ -1,0 +1,20 @@
+# Example auditor configuration for pipewatch
+# The auditor captures structured events for every state transition
+# in the pipeline, enabling audit trails and post-incident review.
+
+auditor:
+  # Maximum number of events to retain in memory.
+  # Oldest events are dropped when the cap is reached.
+  max_events: 1000
+
+  # Event types emitted by the system:
+  #   metric_collected  — a collection cycle completed for a source
+  #   alert_fired       — an alert condition became active
+  #   alert_resolved    — a previously active alert cleared
+  #   escalation        — an alert was escalated to a higher severity
+  #   suppressed        — an alert was suppressed by a silence/suppression rule
+
+  # Integrate with the notifier to forward audit events to a log backend:
+  # notifier:
+  #   backend: log
+  #   level: INFO

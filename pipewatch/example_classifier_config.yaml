@@ -1,0 +1,31 @@
+# Example classifier configuration for pipewatch
+# Define ordered rules; the first matching rule wins.
+
+classifier:
+  default_category: uncategorized
+
+  rules:
+    - category: critical
+      only_unhealthy: true
+      min_value: 80.0
+      # source_name omitted → matches any source
+
+    - category: degraded
+      only_unhealthy: true
+      # no value bounds → any unhealthy result that didn't match above
+
+    - category: elevated
+      only_unhealthy: false
+      min_value: 60.0
+      max_value: 79.9
+      # healthy results with a high (but not critical) value
+
+    - category: nominal
+      # catch-all healthy bucket
+      only_unhealthy: false
+
+# Integration notes:
+#   1. Load rules from this file and construct ClassifyRule objects.
+#   2. Pass them to Classifier(rules=..., default_category=...).
+#   3. Call classifier.classify_all(results) after each scheduler tick.
+#   4. Optionally feed grouped results into the reporter or notifier.

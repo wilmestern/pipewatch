@@ -1,0 +1,35 @@
+# Example batcher configuration for pipewatch
+# Batcher groups metric results into fixed-size batches before
+# downstream processing (e.g. bulk inserts or digest notifications).
+
+batcher:
+  # Number of results to accumulate per source before auto-flushing.
+  # Increase for high-throughput sources; decrease for low-latency alerting.
+  max_size: 10
+
+# Typical integration: pair the Batcher with the Scheduler so that
+# each polling cycle adds results and full batches are forwarded to
+# the Notifier or Exporter.
+#
+# Example pipeline:
+#   scheduler -> MetricsCollector -> Batcher -> Notifier
+#
+# Sources that produce results at different rates will maintain
+# independent buffers; flush_all() can be called at a fixed wall-clock
+# interval as a safety net to drain partial batches.
+
+poll_interval: 60  # seconds between scheduler ticks
+log_level: INFO
+
+sources:
+  - name: warehouse
+    query: "SELECT COUNT(*) FROM orders WHERE created_at > NOW() - INTERVAL '1 hour'"
+    interval: 60
+  - name: api_ingest
+    query: "SELECT COUNT(*) FROM events WHERE ts > NOW() - INTERVAL '5 minutes'"
+    interval: 30
+
+alerts:
+  - name: row_count_low
+    threshold: 100
+    comparator: gte
